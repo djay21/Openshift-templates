@@ -1,0 +1,17 @@
+    apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      annotations:
+        haproxy.router.openshift.io/timeout: 2m
+        openshift.io/host.generated: 'true'
+      name: 'chat-supedddrman'
+    spec:
+      port:
+        targetPort: 8080-tcp
+      tls:
+        termination: edge
+      to:
+        kind: Service
+        name: 'chat-superman'
+        weight: 100
+      wildcardPolicy: None

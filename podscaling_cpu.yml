@@ -1,0 +1,16 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: podscaler
+  namespace: ontofy
+spec:
+  maxReplicas: 7
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    name: podscaler
+  targetCPUUtilizationPercentage: 20
+status:
+  currentReplicas: 5
+  desiredReplicas: 0

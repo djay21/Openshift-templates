@@ -1,0 +1,231 @@
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: Node-template
+  annotations:
+    description: A Node js project template containing buildConfig, DeploymentConfig, ImageStream,PersistentVolumeClaim, Routes & Services
+objects:
+  - Raw: '1'
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: '${PVC_NAME_SQL}'
+      labels:
+        app: '${APP_NAME}'
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+    selector:
+      matchLabels:
+        storage-tier: gold
+        aws-availability-zone: us-west-122
+  - Raw: '1'
+    apiVersion: image.openshift.io/v1
+    kind: ImageStream
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        app: '${APP_NAME}'
+      name: '${SERVICE_NAME_BACKOFFICE}'
+    spec:
+      lookupPolicy:
+        local: false
+    status:
+      dockerImageRepository: ''
+  - Raw: '1'
+    apiVersion: build.openshift.io/v1
+    kind: BuildConfig
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        app: '${APP_NAME}'
+      name: '${SERVICE_NAME_BACKOFFICE}'
+    spec:
+      nodeSelector: null
+      output:
+        to:
+          kind: ImageStreamTag
+          name: '${SERVICE_NAME_BACKOFFICE}:latest'
+      postCommit: {}
+      resources:
+        limits:
+          cpu: 700m
+          memory: 1700Mi
+      source:
+        git:
+          uri: >-
+            https://github.com/djay21/node-js-sample.git
+          ref: "${GIT_BRANCH}"
+        type: Git
+      strategy:
+        dockerStrategy:
+          noCache: true
+        type: Docker
+      triggers:
+        - github:
+            secret: yIuMgSOXPw4757ZOFWK0
+          type: GitHub
+        - generic:
+            secret: tdX5bXL9Ew3v_Ezp5exP
+          type: Generic
+        - type: ConfigChange
+        - imageChange: {}
+          type: ImageChange
+    status:
+      lastVersion: 0
+  - Raw: '1'
+    apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      annotations:
+        openshift.io/generated-by: OpenShiftNewApp
+      creationTimestamp: null
+      labels:
+        app: '${APP_NAME}'
+      name: '${SERVICE_NAME_BACKOFFICE}'
+    spec:
+      replicas: 1
+      selector:
+        app: '${APP_NAME}'
+        deploymentconfig: '${SERVICE_NAME_BACKOFFICE}'
+      strategy:
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+        resources: {}
+      template:
+        metadata:
+          annotations:
+            openshift.io/generated-by: OpenShiftNewApp
+          creationTimestamp: null
+          labels:
+            app: '${APP_NAME}'
+            deploymentconfig: '${SERVICE_NAME_BACKOFFICE}'
+        spec:
+          containers:
+            - image: '${SERVICE_NAME_BACKOFFICE}:latest'
+              name: '${SERVICE_NAME_BACKOFFICE}'
+              imagePullPolicy: Always
+              ports:
+                - containerPort: 8081
+                  protocol: TCP
+              env:
+              - name: NODE_ENV
+                value: production
+              resources:
+                limits:
+                  cpu: 100m
+                  memory: 300Mi
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      test: false
+      triggers:
+        - type: ConfigChange
+        - imageChangeParams:
+            automatic: true
+            containerNames:
+              - '${SERVICE_NAME_BACKOFFICE}'
+            from:
+              kind: ImageStreamTag
+              name: '${SERVICE_NAME_BACKOFFICE}:latest'
+            lastTriggeredImage: ''
+          type: ImageChange
+    status:
+      availableReplicas: 0
+      latestVersion: 0
+      observedGeneration: 0
+      replicas: 0
+      unavailableReplicas: 0
+      updatedReplicas: 0
+  - Raw: '1'
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: '${SERVICE_NAME_BACKOFFICE}'
+      labels:
+        app: '${APP_NAME}'
+    spec:
+      ports:
+        - name: 8081-tcp
+          port: 8081
+          protocol: TCP
+          targetPort: 8081
+      selector:
+        app: '${APP_NAME}'
+        deploymentconfig: '${SERVICE_NAME_BACKOFFICE}'
+    status:
+      loadBalancer: {}
+  - Raw: '1'
+    apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      annotations:
+        haproxy.router.openshift.io/timeout: 2m
+        openshift.io/host.generated: 'true'
+      labels:
+        app: '${APP_NAME}'
+      name: '${SERVICE_NAME_BACKOFFICE}'
+      namespace: ${NAMESPACE_NAME}
+    spec:
+      host: '${SERVICE_NAME_BACKOFFICE}-${NAMESPACE_NAME}.apps.io'
+      port:
+        targetPort: 8081-tcp
+      tls:
+        termination: edge
+      to:
+        kind: Service
+        name: '${SERVICE_NAME_BACKOFFICE}'
+        weight: 100
+      wildcardPolicy: None
+    status:
+      ingress:
+        - conditions:
+              status: 'True'
+              type: Admitted
+          host: >-
+            ${SERVICE_NAME_BACKOFFICE}-${NAMESPACE_NAME}.apps.io
+          routerName: router
+          wildcardPolicy: None
+parameters:
+  - name: NAMESPACE_NAME
+    displayName: NAMESPACE
+    description: select namespace you want to deploy on.
+    value: Node js sample
+    required: true
+  - name: PVC_NAME_SQL
+    displayName: PVC SQL NAME
+    description: pvc name
+    value: dj
+    required: true
+  - name: APP_NAME
+    displayName: APPLICATION NAME
+    description: Application name
+    value: node js sample
+    required: true
+  - name: SERVICE_NAME_BACKOFFICE
+    displayName: BACKOFFICE NAME
+    description: All the ImageStreams will be created by this name
+    value: Node js sample
+    required: true
+  - name: GIT_BRANCH
+    displayName: BRANCH NAME
+    description: Mention the branch you want to deploy from
+    value: develop
+    required: true
+labels:
+  redis: master
+
+

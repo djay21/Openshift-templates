@@ -1,0 +1,20 @@
+apiVersion: autoscaling/v2beta2 
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scaling-memory                       #name of your horizontal pod Autoscaler
+  namespace: default                         #namespace in which you want to apply Autoscaling
+spec:
+  scaleTargetRef:
+    apiVersion: apps.openshift.io/v1 
+    kind: DeploymentConfig 
+    name: podscaler                         #name of the Deployconfig resource
+  minReplicas: 1 
+  maxReplicas: 10 
+  metrics:
+  metrics: 
+  - type: Resource
+    resource:
+      name: memory 
+      target:
+        type: Utilization 
+        averageValue: 50                     #target memory value, after 50% it will autoscale the pods as required
