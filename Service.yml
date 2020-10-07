@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: connector
+  labels:
+    app: connector
+spec:
+  selector:
+    app: connector
+  ports:
+    - name: connector
+      port: 8080
+      targetPort: 8080
