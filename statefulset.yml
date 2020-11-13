@@ -1,0 +1,69 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: gitlab
+  namespace: namespacename
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: gitlab
+    spec:
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 10
+      securityContext: {}
+      #serviceAccountName: root
+      #serviceAccount: root
+      containers:
+        - resources:
+            limits:
+              memory: 2500Mi
+            requests:
+              memory: 500Mi
+          terminationMessagePath: /dev/termination-log
+          name: gitlab
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: gitlab-db
+              mountPath: /etc/gitlab
+            - name: gitlab-db
+              mountPath: /var/log/gitlab
+            - name: gitlab-db
+              mountPath: /var/opt/gitlab
+          terminationMessagePolicy: File
+          image: 'gitlab/gitlab-ee:latest'
+      volumes:
+        - name: gitlab-db
+          persistentVolumeClaim:
+            claimName: gitlab-db
+      dnsPolicy: ClusterFirst
+  volumeClaimTemplates:
+    - metadata:
+        name: gitlab-db
+        creationTimestamp: null
+      spec:
+        accessModes:
+          - ReadWriteMany
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: aws-class
+        volumeMode: Filesystem
+  serviceName: gitlab
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  revisionHistoryLimit: 10
+
