@@ -2,7 +2,8 @@
     kind: Route
     metadata:
       annotations:
-        haproxy.router.openshift.io/timeout: 2m
+       # haproxy.router.openshift.io/timeout: 2m    #setting timeouts
+       # haproxy.router.openshift.io/ip_whitelist: 192.168.1.10  exposing routes to specific ips
         openshift.io/host.generated: 'true'
       name: 'chat-supedddrman'
     spec:
