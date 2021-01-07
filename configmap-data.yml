@@ -1,0 +1,19 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-loadbalancer-config
+data:
+  nginx.conf: |
+    upstream loadbalancer {
+    server 172.30.116.147:3608; 
+    server 172.30.237.79:3608; 
+     }
+
+    server {
+    listen 8080;
+    listen [::]:8080;
+    location / {
+        proxy_pass http://loadbalancer;
+        proxy_set_header Host $host;
+       }
+    }
